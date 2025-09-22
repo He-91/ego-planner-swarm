@@ -11,6 +11,8 @@
 #include <traj_utils/plan_container.hpp>
 #include <ros/ros.h>
 #include <traj_utils/planning_visualization.h>
+#include <path_searching/topo_prm.h>
+#include <path_searching/mppi_planner.h>
 
 namespace ego_planner
 {
@@ -35,6 +37,12 @@ namespace ego_planner
                         const Eigen::Vector3d &end_pos, const Eigen::Vector3d &end_vel, const Eigen::Vector3d &end_acc);
     bool planGlobalTrajWaypoints(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &start_vel, const Eigen::Vector3d &start_acc,
                                  const std::vector<Eigen::Vector3d> &waypoints, const Eigen::Vector3d &end_vel, const Eigen::Vector3d &end_acc);
+
+    /* TOPO and MPPI planning interfaces */
+    bool planTopoPath(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &goal_pos, 
+                      std::vector<Eigen::Vector3d> &topo_path);
+    bool planMPPILocalTraj(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &start_vel,
+                          const Eigen::Vector3d &goal_pos, std::vector<Eigen::Vector3d> &local_traj);
 
     void initPlanModules(ros::NodeHandle &nh, PlanningVisualization::Ptr vis = NULL);
 
@@ -61,6 +69,10 @@ namespace ego_planner
     // ros::Publisher obj_pub_; //zx-todo 
 
     BsplineOptimizer::Ptr bspline_optimizer_;
+    
+    /* TOPO and MPPI planning modules */
+    TopoPRM::Ptr topo_planner_;
+    MPPIPlanner::Ptr mppi_planner_;
 
     int continous_failures_count_{0};
 
