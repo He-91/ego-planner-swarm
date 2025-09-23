@@ -124,7 +124,6 @@ namespace ego_planner
         topo_path.type = "up";
         
         // Create waypoint above the obstacle region
-        Vector3d direction = (goal - start).normalized();
         Vector3d midpoint = (start + goal) / 2.0;
         Vector3d waypoint = midpoint + Vector3d(0, 0, vertical_offset_);
         
@@ -149,7 +148,6 @@ namespace ego_planner
         topo_path.type = "down";
         
         // Create waypoint below the obstacle region
-        Vector3d direction = (goal - start).normalized();
         Vector3d midpoint = (start + goal) / 2.0;
         Vector3d waypoint = midpoint - Vector3d(0, 0, vertical_offset_ * 0.5); // Less offset for down
         
@@ -230,7 +228,6 @@ namespace ego_planner
         std::vector<Eigen::Vector3d> path;
         
         // Generate path from start to waypoint
-        Vector3d seg1_dir = (waypoint - start).normalized();
         double seg1_dist = (waypoint - start).norm();
         int seg1_steps = std::max(1, (int)(seg1_dist / path_resolution_));
         
@@ -242,7 +239,6 @@ namespace ego_planner
         }
         
         // Generate path from waypoint to goal
-        Vector3d seg2_dir = (goal - waypoint).normalized();
         double seg2_dist = (goal - waypoint).norm();
         int seg2_steps = std::max(1, (int)(seg2_dist / path_resolution_));
         
@@ -290,7 +286,24 @@ namespace ego_planner
         
         for (const auto& point : path)
         {
-            double clearance = grid_map_->getDistance(point);
+            // Use occupancy to estimate clearance
+            // If occupied, clearance is 0; if free, use a simple heuristic
+            int occupancy = grid_map_->getOccupancy(point);
+            double clearance = 0.0;
+            
+            if (occupancy == 0) // free space
+            {
+                clearance = 1.0; // Simple heuristic for free space clearance
+            }
+            else if (occupancy == 1) // occupied
+            {
+                clearance = 0.0;
+            }
+            else // unknown
+            {
+                clearance = 0.5; // Conservative estimate for unknown space
+            }
+            
             min_clearance = std::min(min_clearance, clearance);
         }
         

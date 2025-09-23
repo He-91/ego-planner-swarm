@@ -147,7 +147,7 @@ namespace ego_planner
             
             for (int t = 0; t < params_.horizon_steps; t++)
             {
-                MPPIControl base_control = (t < nominal_controls.size()) ? nominal_controls[t] : MPPIControl();
+                MPPIControl base_control = (t < static_cast<int>(nominal_controls.size())) ? nominal_controls[t] : MPPIControl();
                 MPPIControl noisy_control = sampleNoisyControl(base_control);
                 noisy_controls.push_back(noisy_control);
             }
@@ -172,7 +172,7 @@ namespace ego_planner
         MPPIState current_state = initial_state;
         sample.trajectory.push_back(current_state);
         
-        for (int t = 0; t < params_.horizon_steps && t < controls.size(); t++)
+        for (int t = 0; t < params_.horizon_steps && t < static_cast<int>(controls.size()); t++)
         {
             current_state = forwardDynamics(current_state, controls[t], params_.dt);
             clipState(current_state);
@@ -214,8 +214,24 @@ namespace ego_planner
             }
             else
             {
-                // Penalty based on distance to obstacles
-                double dist = grid_map_->getDistance(state.position);
+                // Penalty based on occupancy (simplified distance estimation)
+                // Use occupancy to estimate distance to obstacles
+                int occupancy = grid_map_->getOccupancy(state.position);
+                double dist = 1.0; // Default safe distance for free space
+                
+                if (occupancy == 0) // free space
+                {
+                    dist = 1.0; // Assume safe distance in free space
+                }
+                else if (occupancy == 1) // occupied
+                {
+                    dist = 0.0; // No distance if occupied
+                }
+                else // unknown
+                {
+                    dist = 0.5; // Conservative distance for unknown space
+                }
+                
                 if (dist < params_.safety_radius)
                 {
                     double penalty = (params_.safety_radius - dist) / params_.safety_radius;
@@ -364,7 +380,7 @@ namespace ego_planner
         // Weighted average
         for (const auto& sample : samples)
         {
-            for (int t = 0; t < params_.horizon_steps && t < sample.controls.size(); t++)
+            for (int t = 0; t < params_.horizon_steps && t < static_cast<int>(sample.controls.size()); t++)
             {
                 weighted_controls[t].acceleration += sample.weight * sample.controls[t].acceleration;
             }

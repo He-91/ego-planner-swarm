@@ -6,13 +6,11 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rviz
-  multi_map_server
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES irobot_msgs
-  CATKIN_DEPENDS multi_map_server
   DEPENDS system_lib
           message_runtime
 )
@@ -30,7 +28,6 @@ if(rviz_QT_VERSION VERSION_LESS "5")
     src/goal_tool.h
     src/probmap_display.h
     src/aerialmap_display.h
-    src/multi_probmap_display.h
   )
 
 else()
@@ -42,7 +39,6 @@ else()
     src/goal_tool.h
     src/probmap_display.h
     src/aerialmap_display.h
-    src/multi_probmap_display.h
   )
 endif()
 
@@ -60,7 +56,6 @@ set(SOURCE_FILES
   src/goal_tool.cpp
   src/probmap_display.cpp
   src/aerialmap_display.cpp   
-  src/multi_probmap_display.cpp
   ${MOC_FILES}
 )
 
@@ -72,8 +67,6 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
-
-add_dependencies(${PROJECT_NAME} multi_map_server_generate_messages_cpp)
 
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
