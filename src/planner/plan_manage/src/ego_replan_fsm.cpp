@@ -36,8 +36,9 @@ namespace ego_planner
     visualization_.reset(new PlanningVisualization(nh));
     planner_manager_.reset(new EGOPlannerManager);
     planner_manager_->initPlanModules(nh, visualization_);
-    planner_manager_->deliverTrajToOptimizer(); // store trajectories
-    planner_manager_->setDroneIdtoOpt();
+    
+    // Simplified for single drone - removed swarm functionality
+    ROS_INFO("[FSM] Single drone mode - swarm functionality disabled");
 
     /* callback */
     exec_timer_ = nh.createTimer(ros::Duration(0.01), &EGOReplanFSM::execFSMCallback, this);
@@ -45,14 +46,7 @@ namespace ego_planner
 
     odom_sub_ = nh.subscribe("odom_world", 1, &EGOReplanFSM::odometryCallback, this);
 
-    if (planner_manager_->pp_.drone_id >= 1)
-    {
-      string sub_topic_name = string("/drone_") + std::to_string(planner_manager_->pp_.drone_id - 1) + string("_planning/swarm_trajs");
-      swarm_trajs_sub_ = nh.subscribe(sub_topic_name.c_str(), 10, &EGOReplanFSM::swarmTrajsCallback, this, ros::TransportHints().tcpNoDelay());
-    }
-    string pub_topic_name = string("/drone_") + std::to_string(planner_manager_->pp_.drone_id) + string("_planning/swarm_trajs");
-    swarm_trajs_pub_ = nh.advertise<traj_utils::MultiBsplines>(pub_topic_name.c_str(), 10);
-
+    // Simplified topic names for single drone
     broadcast_bspline_pub_ = nh.advertise<traj_utils::Bspline>("planning/broadcast_bspline_from_planner", 10);
     broadcast_bspline_sub_ = nh.subscribe("planning/broadcast_bspline_to_planner", 100, &EGOReplanFSM::BroadcastBsplineCallback, this, ros::TransportHints().tcpNoDelay());
 
@@ -320,6 +314,7 @@ namespace ego_planner
     }
   }
 
+  /* Swarm trajectory callback - DISABLED for single drone mode
   void EGOReplanFSM::swarmTrajsCallback(const traj_utils::MultiBsplinesPtr &msg)
   {
 
@@ -401,6 +396,7 @@ namespace ego_planner
 
     have_recv_pre_agent_ = true;
   }
+  */ // End of disabled swarm callback
 
   void EGOReplanFSM::changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call)
   {
@@ -487,8 +483,32 @@ namespace ego_planner
           if (success)
           {
             changeFSMExecState(EXEC_TRAJ, "FSM");
+            
+            // Publish single drone trajectory
+            auto info = &planner_manager_->local_data_;
+            traj_utils::Bspline bspline;
+            bspline.order = 3;
+            bspline.start_time = info->start_time_;
+            bspline.drone_id = 0; // Single drone
+            bspline.traj_id = info->traj_id_;
 
-            publishSwarmTrajs(true);
+            Eigen::MatrixXd pos_pts = info->position_traj_.getControlPoint();
+            for (int i = 0; i < pos_pts.cols(); ++i)
+            {
+              geometry_msgs::Point pt;
+              pt.x = pos_pts(0, i);
+              pt.y = pos_pts(1, i);
+              pt.z = pos_pts(2, i);
+              bspline.pos_pts.push_back(pt);
+            }
+
+            Eigen::VectorXd knots = info->position_traj_.getKnot();
+            for (int i = 0; i < knots.rows(); ++i)
+            {
+              bspline.knots.push_back(knots(i));
+            }
+            
+            bspline_pub_.publish(bspline);
           }
           else
           {
@@ -517,7 +537,8 @@ namespace ego_planner
       {
         changeFSMExecState(EXEC_TRAJ, "FSM");
         flag_escape_emergency_ = true;
-        publishSwarmTrajs(false);
+        // publishSwarmTrajs(false); // Removed for single drone mode
+        ROS_DEBUG("[FSM] Emergency trajectory published (single drone mode)");
       }
       else
       {
@@ -532,7 +553,8 @@ namespace ego_planner
       if (planFromCurrentTraj(1))
       {
         changeFSMExecState(EXEC_TRAJ, "FSM");
-        publishSwarmTrajs(false);
+        // publishSwarmTrajs(false); // Removed for single drone mode
+        ROS_DEBUG("[FSM] Current trajectory replanned (single drone mode)");
       }
       else
       {
@@ -695,7 +717,7 @@ namespace ego_planner
     constexpr double time_step = 0.01;
     double t_cur = (ros::Time::now() - info->start_time_).toSec();
     Eigen::Vector3d p_cur = info->position_traj_.evaluateDeBoorT(t_cur);
-    const double CLEARANCE = 1.0 * planner_manager_->getSwarmClearance();
+    const double CLEARANCE = 1.0; // Fixed clearance for single drone mode
     double t_cur_global = ros::Time::now().toSec();
     double t_2_3 = info->duration_ * 2 / 3;
     for (double t = t_cur; t < info->duration_; t += time_step)
@@ -730,7 +752,8 @@ namespace ego_planner
         if (planFromCurrentTraj()) // Make a chance
         {
           changeFSMExecState(EXEC_TRAJ, "SAFETY");
-          publishSwarmTrajs(false);
+          // publishSwarmTrajs(false); // Removed for single drone mode
+          ROS_DEBUG("[FSM] Safety trajectory published (single drone mode)");
           return;
         }
         else

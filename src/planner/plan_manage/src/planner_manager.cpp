@@ -38,6 +38,15 @@ namespace ego_planner
     bspline_optimizer_->setEnvironment(grid_map_, obj_predictor_);
     bspline_optimizer_->a_star_.reset(new AStar);
     bspline_optimizer_->a_star_->initGridMap(grid_map_, Eigen::Vector3i(100, 100, 100));
+    
+    /* Initialize TOPO and MPPI planners */
+    topo_planner_.reset(new TopoPRM);
+    topo_planner_->init(nh, grid_map_);
+    
+    mppi_planner_.reset(new MPPIPlanner);
+    mppi_planner_->init(nh, grid_map_);
+    
+    ROS_INFO("[PlannerManager] TOPO and MPPI planners initialized");
 
     visualization_ = vis;
   }
@@ -570,5 +579,82 @@ namespace ego_planner
     }
     UniformBspline::parameterizeToBspline(dt, point_set, start_end_derivative, ctrl_pts);
   }
+
+  // SECTION TOPO and MPPI planning implementation
+  
+  bool EGOPlannerManager::planTopoPath(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &goal_pos, 
+                                      std::vector<Eigen::Vector3d> &topo_path)
+  {
+    if (!topo_planner_)
+    {
+      ROS_ERROR("[PlannerManager] TOPO planner not initialized!");
+      return false;
+    }
+    
+    ROS_INFO("[PlannerManager] Planning TOPO path from (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
+             start_pos(0), start_pos(1), start_pos(2), goal_pos(0), goal_pos(1), goal_pos(2));
+    
+    std::vector<TopoPath> topo_paths;
+    if (!topo_planner_->searchTopoPath(start_pos, goal_pos, topo_paths))
+    {
+      ROS_WARN("[PlannerManager] No valid TOPO path found!");
+      return false;
+    }
+    
+    // Select best path
+    TopoPath best_path = topo_planner_->selectBestPath(topo_paths);
+    if (!best_path.valid)
+    {
+      ROS_WARN("[PlannerManager] No valid TOPO path selected!");
+      return false;
+    }
+    
+    topo_path = best_path.path;
+    
+    // Visualize paths
+    topo_planner_->visualizeTopoPaths(topo_paths, 0);
+    topo_planner_->visualizeBestPath(best_path, 0);
+    
+    ROS_INFO("[PlannerManager] TOPO path planned successfully with %zu waypoints, type: %s, cost: %.3f", 
+             topo_path.size(), best_path.type.c_str(), best_path.cost);
+    
+    return true;
+  }
+
+  bool EGOPlannerManager::planMPPILocalTraj(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &start_vel,
+                                           const Eigen::Vector3d &goal_pos, std::vector<Eigen::Vector3d> &local_traj)
+  {
+    if (!mppi_planner_)
+    {
+      ROS_ERROR("[PlannerManager] MPPI planner not initialized!");
+      return false;
+    }
+    
+    ROS_DEBUG("[PlannerManager] Planning MPPI local trajectory");
+    
+    MPPIState current_state(start_pos, start_vel);
+    std::vector<MPPIState> planned_trajectory;
+    std::vector<MPPIControl> planned_controls;
+    
+    if (!mppi_planner_->planLocalTrajectory(current_state, goal_pos, planned_trajectory, planned_controls))
+    {
+      ROS_WARN("[PlannerManager] MPPI local planning failed!");
+      return false;
+    }
+    
+    // Convert to position trajectory
+    local_traj.clear();
+    local_traj.reserve(planned_trajectory.size());
+    for (const auto& state : planned_trajectory)
+    {
+      local_traj.push_back(state.position);
+    }
+    
+    ROS_DEBUG("[PlannerManager] MPPI local trajectory planned with %zu waypoints", local_traj.size());
+    
+    return true;
+  }
+
+  // !SECTION
 
 } // namespace ego_planner

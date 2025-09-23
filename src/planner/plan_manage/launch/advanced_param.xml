@@ -152,8 +152,28 @@
     <param name="prediction/lambda" value="1.0" type="double"/>
     <param name="prediction/predict_rate" value="1.0" type="double"/>
   
-  
-
+  <!-- TOPO path searching parameters -->
+    <param name="topo_prm/step_size" value="0.1" type="double"/>
+    <param name="topo_prm/clearance_threshold" value="0.5" type="double"/>
+    <param name="topo_prm/path_resolution" value="0.2" type="double"/>
+    <param name="topo_prm/max_search_time" value="0.05" type="double"/>
+    <param name="topo_prm/vertical_offset" value="2.0" type="double"/>
+    <param name="topo_prm/horizontal_offset" value="2.0" type="double"/>
+    
+  <!-- MPPI local planning parameters -->
+    <param name="mppi/num_samples" value="1000" type="int"/>
+    <param name="mppi/horizon_steps" value="20" type="int"/>
+    <param name="mppi/dt" value="0.1" type="double"/>
+    <param name="mppi/lambda" value="1.0" type="double"/>
+    <param name="mppi/control_std_vel" value="1.0" type="double"/>
+    <param name="mppi/control_std_acc" value="2.0" type="double"/>
+    <param name="mppi/cost_collision" value="100.0" type="double"/>
+    <param name="mppi/cost_smoothness" value="1.0" type="double"/>
+    <param name="mppi/cost_goal" value="10.0" type="double"/>
+    <param name="mppi/cost_effort" value="0.1" type="double"/>
+    <param name="mppi/max_vel" value="$(arg max_vel)" type="double"/>
+    <param name="mppi/max_acc" value="$(arg max_acc)" type="double"/>
+    <param name="mppi/safety_radius" value="0.3" type="double"/>
 
   </node>
 

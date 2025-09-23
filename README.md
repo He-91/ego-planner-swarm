@@ -1,29 +1,11 @@
-# Update: ROS2 Support
-For the ROS2 version, please refer to the branch [ros2_version](https://github.com/ZJU-FAST-Lab/ego-planner-swarm/tree/ros2_version).
+# EGO-Planner with TOPO Path Searching and MPPI Local Planning
 
-# Quick Start within 3 Minutes 
-Compiling tests passed on ubuntu **16.04, 18.04, and 20.04** with ros installed.
-You can just execute the following commands one by one.
-```
-sudo apt-get install libarmadillo-dev
-git clone https://github.com/ZJU-FAST-Lab/ego-planner-swarm.git
-cd ego-planner-swarm
-catkin_make -j1
-source devel/setup.bash
-roslaunch ego_planner simple_run.launch
-```
-<!If your network to github is slow, We recommend you to try the gitee repository [https://gitee.com/iszhouxin/ego-planner-swarm](https://gitee.com/iszhouxin/ego-planner-swarm). They synchronize automatically./>
+**EGO-Planner Single Drone** is a comprehensive autonomous navigation system for single quadrotor drones in obstacle-rich environments, featuring:
 
-If you find this work useful or interesting, please kindly give us a star :star:, thanks!:grinning:
-
-# Acknowledgements
-
-- This work extends [EGO-Planner](https://github.com/ZJU-FAST-Lab/ego-planner) to swarm navigation.
-
-# EGO-Swarm
-EGO-Swarm: A Fully Autonomous and Decentralized Quadrotor Swarm System in Cluttered Environments
-
-**EGO-Swarm** is a decentralized and asynchronous systematic solution for multi-robot autonomous navigation in unknown obstacle-rich scenes using merely onboard resources.
+- **TOPO Path Searching**: 4 topological paths (up, down, left, right) for robust obstacle avoidance
+- **MPPI Local Planning**: Model Predictive Path Integral algorithm for reactive local trajectory optimization  
+- **Real-time Performance**: Optimized for single drone operation with enhanced computational efficiency
+- **Comprehensive Visualization**: Full visualization of TOPO paths, MPPI samples, and planning results
 
 <p align = "center">
 <img src="pictures/title.gif" width = "413" height = "232" border="5" />
@@ -32,205 +14,202 @@ EGO-Swarm: A Fully Autonomous and Decentralized Quadrotor Swarm System in Clutte
 <img src="pictures/indoor2.gif" width = "413" height = "232" border="5" />
 </p>
 
-**Video Links:** [YouTube](https://www.youtube.com/watch?v=K5WKg8meb94&ab_channel=FeiGao), [bilibili](https://www.bilibili.com/video/BV1Nt4y1e7KD) (for Mainland China)
+## Key Features
 
-## 1. Related Paper
-EGO-Swarm: A Fully Autonomous and Decentralized Quadrotor Swarm System in Cluttered Environments, Xin Zhou, Jiangchao Zhu, Hongyu Zhou, Chao Xu, and Fei Gao (Published in ICRA2021). [Paper link](https://ieeexplore.ieee.org/abstract/document/9561902) and [Science](https://www.sciencemag.org/news/2020/12/watch-swarm-drones-fly-through-heavy-forest-while-staying-formation) report.
+### TOPO Path Searching
+- **4 Topological Strategies**: Generates up, down, left, and right paths around obstacles
+- **Optimal Path Selection**: Automatically selects the best path based on cost and clearance metrics
+- **Fast-Planner Inspired**: Based on proven topological path planning from HKUST Fast-Planner
+- **Real-time Visualization**: Live display of all candidate paths and selected optimal path
 
-## 2. Standard Compilation
+### MPPI Local Planning  
+- **Sampling-based Optimization**: Uses Monte Carlo sampling for robust local planning
+- **Multi-objective Cost**: Balances collision avoidance, smoothness, goal reaching, and control effort
+- **Reactive Planning**: Quickly adapts to dynamic obstacles and changing environments
+- **Tunable Parameters**: Configurable horizon, sampling count, and cost weights
 
-**Requirements**: ubuntu 16.04, 18.04 or 20.04 with ros-desktop-full installation.
+### Single Drone Optimization
+- **Simplified Architecture**: Removed multi-drone coordination overhead for better performance
+- **Streamlined Communication**: Direct trajectory publishing without swarm synchronization
+- **Enhanced Reliability**: Focused testing and optimization for single drone scenarios
 
-**Step 1**. Install [Armadillo](http://arma.sourceforge.net/), which is required by **uav_simulator**.
+<p align = "center">
+<img src="pictures/title.gif" width = "413" height = "232" border="5" />
+<img src="pictures/outdoor.gif" width = "413" height = "232" border="5" />
+<img src="pictures/indoor1.gif" width = "413" height = "232" border="5" />
+<img src="pictures/indoor2.gif" width = "413" height = "232" border="5" />
+</p>
+
+## Quick Start within 3 Minutes 
+
+Compiling tests passed on ubuntu **16.04, 18.04, and 20.04** with ROS installed.
+You can execute the following commands one by one:
+
+```bash
+sudo apt-get install libarmadillo-dev
+git clone https://github.com/He-91/ego-planner-swarm.git
+cd ego-planner-swarm
+catkin_make -j1
+source devel/setup.bash
+
+# Launch single drone with TOPO and MPPI planning
+roslaunch ego_planner single_drone.launch
 ```
+
+**Important**: This version is optimized for **single drone operation** with advanced TOPO path searching and MPPI local planning algorithms.
+
+## Algorithm Overview
+
+### TOPO Path Searching Algorithm
+The system generates 4 topological paths to handle complex obstacle environments:
+
+1. **Up Path**: Navigates over obstacles using vertical clearance
+2. **Down Path**: Uses lower altitude when vertical space permits  
+3. **Left Path**: Lateral avoidance to the left of direct path
+4. **Right Path**: Lateral avoidance to the right of direct path
+
+Each path is evaluated based on:
+- **Path Length**: Total distance from start to goal
+- **Clearance**: Minimum distance to obstacles along the path
+- **Feasibility**: Collision-free validation through the environment
+
+### MPPI Local Planning Algorithm
+Model Predictive Path Integral (MPPI) provides reactive local planning:
+
+1. **Sampling**: Generates multiple control sequences with noise
+2. **Rollout**: Simulates drone dynamics for each control sequence
+3. **Cost Evaluation**: Multi-objective cost including collision, smoothness, goal tracking
+4. **Weighted Average**: Combines control sequences based on their performance
+
+Key parameters:
+- **Horizon**: 20 steps (2 seconds at 0.1s timestep)
+- **Samples**: 1000 rollouts per planning cycle
+- **Update Rate**: 10 Hz real-time planning
+
+## Installation and Compilation
+
+**Requirements**: Ubuntu 16.04, 18.04 or 20.04 with ROS desktop-full installation.
+
+**Step 1**. Install [Armadillo](http://arma.sourceforge.net/), required by the simulator.
+```bash
 sudo apt-get install libarmadillo-dev
 ``` 
 
-**Step 2**. Clone the code from github or gitee. These two repositories synchronize automatically.
-
-From github,
-```
-git clone https://github.com/ZJU-FAST-Lab/ego-planner-swarm.git
+**Step 2**. Clone the repository.
+```bash
+git clone https://github.com/He-91/ego-planner-swarm.git
 ```
 
-<!--Or from gitee,
-```
-git clone https://gitee.com/iszhouxin/ego-planner-swarm.git
-```
-/-->
-
-**Step 3**. Compile,
-```
-cd ego-planner
+**Step 3**. Compile the workspace.
+```bash
+cd ego-planner-swarm
 catkin_make -DCMAKE_BUILD_TYPE=Release -j1
 ```
 
-**Step 4**. Run.
+**Step 4**. Run the system.
 
-In a terminal at the _ego-planner-swarm/_ folder, open the rviz for visualization and interactions
-```
+In one terminal, launch RViz for visualization:
+```bash
 source devel/setup.bash
 roslaunch ego_planner rviz.launch
 ```
 
-In another terminal at the _ego-planner-swarm/_, run the planner in simulation by
-```
+In another terminal, launch the single drone planning system:
+```bash
 source devel/setup.bash
-roslaunch ego_planner swarm.launch
+roslaunch ego_planner single_drone.launch
 ```
 
-Then you can follow the gif below to control the drone.
+### Planning Parameters
 
-<p align = "center">
-<img src="pictures/sim_demo.gif" width = "640" height = "360" border="5" />
-</p>
+Key parameters for TOPO and MPPI planning can be configured in the launch files:
 
-## 3. Using an IDE
-We recommend using [vscode](https://code.visualstudio.com/), the project file has been included in the code you have cloned, which is the _.vscode_ folder.
-This folder is **hidden** by default.
-Follow the steps below to configure the IDE for auto code completion & jump.
-It will take 3 minutes.
-
-**Step 1**. Install C++ and CMake extentions in vscode.
-
-**Step 2**. Re-compile the code using the command
-```
-catkin_make -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=Yes
-```
-It will export a compile commands file, which can help vscode to determine the code architecture.
-
-**Step 3**. Launch vscode and select the _ego-planner_ folder to open.
-```
-code ~/<......>/ego-planner-swarm/
+**TOPO Parameters:**
+```xml
+<param name="topo_prm/vertical_offset" value="2.0"/>     <!-- Height offset for up/down paths -->
+<param name="topo_prm/horizontal_offset" value="2.0"/>   <!-- Lateral offset for left/right paths -->
+<param name="topo_prm/clearance_threshold" value="0.5"/> <!-- Minimum clearance requirement -->
 ```
 
-Press **Ctrl+Shift+B** in vscode to compile the code. This command is defined in _.vscode/tasks.json_.
-You can add customized arguments after **"args"**. The default is **"-DCMAKE_BUILD_TYPE=Release"**.
-
-**Step 4**. Close and re-launch vscode, you will see the vscode has already understood the code architecture and can perform auto completion & jump.
-
- ## 4. Use GPU or Not
- Packages in this repo, **local_sensing** have GPU, CPU two different versions. By default, they are in CPU version for better compatibility. By changing
- 
- ```
- set(ENABLE_CUDA false)
- ```
- 
- in the _CMakeList.txt_ in **local_sensing** packages, to
- 
- ```
- set(ENABLE_CUDA true)
- ```
- 
-CUDA will be turned-on to generate depth images as a real depth camera does. 
-
-Please remember to also change the 'arch' and 'code' flags in the line of 
-```
-    set(CUDA_NVCC_FLAGS 
-      -gencode arch=compute_61,code=sm_61;
-    ) 
-``` 
-in _CMakeList.txt_. If you encounter compiling error due to different Nvidia graphics card you use or you can not see proper depth images as expected, you can check the right code via [link1](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/) or [link2](https://github.com/tpruvot/ccminer/wiki/Compatibility).
- 
-Don't forget to re-compile the code!
-
-**local_sensing** is the simulated sensors. If ```ENABLE_CUDA``` **true**, it mimics the depth measured by stereo cameras and renders a depth image by GPU. If ```ENABLE_CUDA``` **false**, it will publish pointclouds with no ray-casting. Our local mapping module automatically selects whether depth images or pointclouds as its input.
-
-For installation of CUDA, please go to [CUDA ToolKit](https://developer.nvidia.com/cuda-toolkit)
-
-## 5. Use Drone Simulation Considering Dynamics or Not
-Typical simulations use a dynamic model to calculate the motion of the drone under given commands.
-However, it requires continuous iterations to solve a differential equation, which consumes quite a lot computation.
-When launching a swarm of drones, this computation burden may cause significant lag.
-On an i7 9700KF CPU I use, 15 drones are the upper limit.
-Therefore, for compatibility and scalability purposes, I use a "[fake_drone](https://github.com/ZJU-FAST-Lab/ego-planner-swarm/tree/master/src/uav_simulator/fake_drone)" package to convert commands to drone odometry directly by default.
-
-If you want to use a more realistic quadrotor model, you can un-comment the node `quadrotor_simulator_so3` and `so3_control/SO3ControlNodelet` in [simulator.xml](https://github.com/ZJU-FAST-Lab/ego-planner-swarm/blob/master/src/planner/plan_manage/launch/simulator.xml) to enable quadrotor simulation considering dynamics.
-Please don't forget to comment the package `poscmd_2_odom` right after the above two nodes.
-
-## 6. Utilize the Full Performance of CPU
-The computation time of our planner is too short for the OS to increase CPU frequency, which makes the computation time tend to be longer and unstable.
-
-Therefore, we recommend you to manually set the CPU frequency to the maximum.
-Firstly, install a tool by
-```
-sudo apt install cpufrequtils
-```
-Then you can set the CPU frequency to the maximum allowed by
-```
-sudo cpufreq-set -g performance
-```
-More information can be found in [http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils](http://www.thinkwiki.org/wiki/How_to_use_cpufrequtils).
-
-Note that CPU frequency may still decrease due to high temperature in high load.
-
-<!--
-# Improved ROS-RealSense Driver
-
-We modified the ros-realsense driver to enable the laser emitter strobe every other frame, allowing the device to output high quality depth images with the help of emitter, and along with binocular images free from laser interference.
-
-<p align = "center">
-<img src="pictures/realsense.PNG" width = "640" height = "158" border="5" />
-</p>
-
-This ros-driver is modified from [https://github.com/IntelRealSense/realsense-ros](https://github.com/IntelRealSense/realsense-ros) and is compatible with librealsense2 2.30.0.
-Tests are performed on Intel RealSense D435 and D435i.
-
-Parameter ```emitter_on_off``` is to turn on/off the added function.
-Note that if this function is turned on, the output frame rate from the device will be reduced to half of the frame rate you set, since the device uses half of the stream for depth estimation and the other half as binocular grayscale outputs.
-What's more, parameters ```depth_fps``` and ```infra_fps``` must be identical, and ```enable_emitter``` must be true as well under this setting.
-
-##  Install
-
-The driver of librealsense2 2.30.0 should be installed explicitly.
-On a x86 CPU, this can be performed easily within 5 minutes.
-Firstly, remove the currently installed driver by 
-```
-sudo apt remove librealsense2-utils
-```
-or manually remove the files if you have installed the librealsense from source.
-Then, you can install the library of version 2.30.0 by
-```
-sudo apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
-```
-For ubuntu 16.04
-```
-sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo xenial main" -u
-```
-For ubuntu 18.04
-```
-sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u
-```
-Then continue with
-```
-sudo apt-get install librealsense2-dkms
-sudo apt install librealsense2=2.30.0-0~realsense0.1693
-sudo apt install librealsense2-gl=2.30.0-0~realsense0.1693
-sudo apt install librealsense2-utils=2.30.0-0~realsense0.1693
-sudo apt install librealsense2-dev=2.30.0-0~realsense0.1693
-sudo apt remove librealsense2-udev-rules
-sudo apt install librealsense2-udev-rules=2.30.0-0~realsense0.1693
-``` 
-Here you can verify the installation by 
-```
-realsense_viewer
+**MPPI Parameters:**
+```xml
+<param name="mppi/num_samples" value="1000"/>      <!-- Number of rollout samples -->
+<param name="mppi/horizon_steps" value="20"/>      <!-- Prediction horizon -->
+<param name="mppi/lambda" value="1.0"/>            <!-- Temperature parameter -->
+<param name="mppi/cost_collision" value="100.0"/>  <!-- Collision penalty weight -->
 ```
 
-##  Run
+## Visualization and Topics
 
-If everything looks well, you can now compile the ros-realsense package named _modified_realsense2_camera.zip_ by ```catkin_make```, then run ros realsense node by 
-```
-roslaunch realsense_camera rs_camera.launch
-```
-Then you will receive depth stream along with binocular stream together at 30Hz by default.
--->
+The system publishes several topics for visualization and monitoring:
 
-# Licence
+**TOPO Path Topics:**
+- `/topo_paths` (MarkerArray): All 4 candidate topological paths
+- `/best_topo_path` (Marker): Selected optimal topological path
+
+**MPPI Planning Topics:**
+- `/mppi_samples` (MarkerArray): Sampled rollout trajectories
+- `/mppi_best_trajectory` (Marker): Optimal MPPI trajectory
+- `/mppi_control_effort` (Marker): Control effort visualization
+
+**Standard Planning Topics:**
+- `/planning/bspline` (Bspline): Final trajectory for execution
+- `/planning/data_display` (DataDisp): Planning performance data
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **Build Error**: Ensure all dependencies are installed
+   ```bash
+   rosdep install --from-paths src --ignore-src -r -y
+   ```
+
+2. **Planning Fails**: Check parameter values in launch files, especially clearance thresholds
+
+3. **No Visualization**: Verify that RViz is subscribed to the correct topics
+
+## Algorithm Details
+
+### TOPO Path Cost Function
+Each topological path is evaluated using:
+```
+Cost = α × PathLength + β × ClearancePenalty + γ × FeasibilityPenalty
+```
+
+Where:
+- **PathLength**: Euclidean distance along the path
+- **ClearancePenalty**: Penalty for paths too close to obstacles  
+- **FeasibilityPenalty**: High penalty for collision-prone paths
+
+### MPPI Cost Components
+The MPPI algorithm optimizes a multi-objective cost:
+```
+J = w₁×J_collision + w₂×J_smoothness + w₃×J_goal + w₄×J_effort
+```
+
+Where:
+- **J_collision**: Distance-based collision avoidance
+- **J_smoothness**: Control sequence smoothness 
+- **J_goal**: Distance to goal position
+- **J_effort**: Control magnitude penalty
+
+## Acknowledgements
+
+- **Original EGO-Planner**: [ZJU-FAST-Lab/ego-planner](https://github.com/ZJU-FAST-Lab/ego-planner)
+- **Fast-Planner**: [HKUST-Aerial-Robotics/Fast-Planner](https://github.com/HKUST-Aerial-Robotics/Fast-Planner) for TOPO path inspiration
+- **MPPI Algorithm**: Based on Model Predictive Path Integral control theory
+
+# License
 The source code is released under [GPLv3](http://www.gnu.org/licenses/) license.
 
-# Maintenance
-We are still working on extending the proposed system and improving code reliability. 
+# Maintenance and Contact
+This single-drone version with TOPO and MPPI planning is actively maintained.
 
-For any technical issues, please contact Xin Zhou (iszhouxin@zju.edu.cn) or Fei GAO (fgaoaa@zju.edu.cn).
+For technical issues or questions about the TOPO/MPPI implementation, please open an issue on this repository.
+
+For questions about the original EGO-Planner framework, contact:
+- Xin Zhou (iszhouxin@zju.edu.cn) 
+- Fei GAO (fgaoaa@zju.edu.cn)
 
 For commercial inquiries, please contact Fei GAO (fgaoaa@zju.edu.cn).
